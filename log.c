@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#define MAXLINE 2048
+#define MAXLINE 4096
 
 void log_info(const char *fmt, ...)
 {
@@ -43,4 +43,3 @@ void log_error(const char *fmt, ...)
     syslog(LOG_ERR, fmt, p);
     va_end(p);
 }
-

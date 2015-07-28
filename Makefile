@@ -2,7 +2,7 @@ CC = cc
 CFLAGS = -Wall
 
 TCPSERVER = tcpserver
-TCPSERVERO = tcpserver.o log.o
+TCPSERVERO = tcpserver.o log.o iofunc.o
 
 default:
 	$(MAKE) -r all

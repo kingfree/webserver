@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+# 可执行文件
+tcpserver
+
