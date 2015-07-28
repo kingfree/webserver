@@ -52,23 +52,32 @@ void hello(int fd)
 
     now = time(NULL);
     tm = localtime(&now);
-    strftime(buf, sizeof(buf), "%G-%m-%d %T", tm);
+    strftime(buff, sizeof(buff), "%G-%m-%d %T", tm);
+    snprintf(buf, sizeof(buf),
+            "<html>"
+            "<body>"
+            "<h1>Hello, 世界</h1>"
+            "<p>当前服务器时间: </p>"
+            "<pre>%s</pre>"
+            "</body>"
+            "</html>",
+            buff);
 
     snprintf(buff, sizeof(buff), 
             "HTTP/1.1 200 OK\r\n"
             "Server: Time\r\n"
-            "Date: %s\r\n"
-            "Content-Type: text/plain;charset=UTF-8\r\n"
+            "Date: %s"
+            "Content-Type: text/html;charset=UTF-8\r\n"
             "Content-Length: %ld\r\n"
             "\r\n%s\r\n\r\n",
-            buf, strlen(buf), buf);
-    puts(buff);
+            ctime(&now), strlen(buf), buf);
 
     n = send(fd, buff, strlen(buff), 0);
     if (n < 0) {
         log_error("发送数据失败 %d", n);
         exit(1);
     }
+    log_info("响应内容: \n%s", buff);
 }
 
 int main(int argc, char *argv[])
@@ -79,6 +88,7 @@ int main(int argc, char *argv[])
     int res;
     socklen_t socklen;
     int pid;
+    char buff[MAXLINE];
 
     if (argc > 1 && (port = atoi(argv[1])) < 1) port = DEFAULT_PORT;
 
@@ -104,19 +114,21 @@ int main(int argc, char *argv[])
         log_error("监听失败");
         exit(1);
     }
-    koko;
 
     for (;;) {
         socklen = sizeof(client);
-        koko;
         conn_fd = accept(listen_fd, (struct sockaddr *)&client, &socklen);
-        koko;
         if (conn_fd < 0) {
+            log_error("接收请求失败");
+            exit(1);
+        }
+        log_info("连接来自 %s:%d", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
+        res = recv(conn_fd, buff, sizeof(buff), 0);
+        if (res < 0) {
             log_error("接收数据失败");
             exit(1);
         }
-        koko;
-        log_info("连接来自 %s:%d", inet_ntoa(client.sin_addr), ntohs(client.sin_port));
+        log_info("请求内容: (并不关心)\n%s", buff);
 
         pid = fork();
         if (pid == 0) {
