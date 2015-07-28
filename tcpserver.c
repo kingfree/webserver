@@ -1,46 +1,9 @@
 #include "unp.h"
-#include <stdarg.h>
-#include <syslog.h>
+#include "log.h"
 
 #define DEFAULT_PORT 80
 
 #define koko fprintf(stderr, "ライン %d: %s() ここまで\n", __LINE__, __func__)
-
-void log_info(const char *fmt, ...)
-{
-    va_list p;
-    static char buff[MAXLINE];
-
-    va_start(p, fmt);
-    vsnprintf(buff, sizeof(buff), fmt, p);
-    fprintf(stderr, "信息: %s\n", buff);
-    va_end(p);
-
-    va_start(p, fmt);
-    syslog(LOG_INFO, fmt, p);
-    va_end(p);
-}
-
-void log_error(const char *fmt, ...)
-{
-    va_list p;
-    static char buff[MAXLINE];
-    size_t n;
-    int errnod;
-
-    errnod = errno;
-
-    va_start(p, fmt);
-    vsnprintf(buff, sizeof(buff), fmt, p);
-    n = strlen(buff);
-    snprintf(buff + n, sizeof(buff) - n, ": %s", strerror(errnod));
-    fprintf(stderr, "错误: %s\n", buff);
-    va_end(p);
-
-    va_start(p, fmt);
-    syslog(LOG_ERR, fmt, p);
-    va_end(p);
-}
 
 void hello(int fd)
 {
@@ -55,6 +18,9 @@ void hello(int fd)
     strftime(buff, sizeof(buff), "%G-%m-%d %T", tm);
     snprintf(buf, sizeof(buf),
             "<html>"
+            "<head>"
+            "<title>主页</title>"
+            "</head>"
             "<body>"
             "<h1>Hello, 世界</h1>"
             "<p>当前服务器时间: </p>"
@@ -69,7 +35,7 @@ void hello(int fd)
             "Date: %s"
             "Content-Type: text/html;charset=UTF-8\r\n"
             "Content-Length: %ld\r\n"
-            "\r\n%s\r\n\r\n",
+            "\r\n%s\r\n",
             ctime(&now), strlen(buf), buf);
 
     n = send(fd, buff, strlen(buff), 0);
