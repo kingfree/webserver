@@ -1,7 +1,6 @@
 #include "unp.h"
 #include "log.h"
-
-#define DEFAULT_PORT 80
+#include "conf.h"
 
 #define koko fprintf(stderr, "ライン %d: %s() ここまで\n", __LINE__, __func__)
 
@@ -68,7 +67,11 @@ int main(int argc, char *argv[])
     int pid;
     char buff[MAXLINE];
 
-    if (argc > 1 && (port = atoi(argv[1])) < 1) port = DEFAULT_PORT;
+    log_info("配置是否初始化: %d", global_settings.inited);
+    conf_init();
+    log_info("配置是否初始化: %d", global_settings.inited);
+
+    if (argc > 1 && (port = atoi(argv[1])) < 1) port = global_settings.port;
 
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) {
@@ -92,6 +95,7 @@ int main(int argc, char *argv[])
         log_error("监听失败");
         exit(1);
     }
+    log_info("服务器启动在 %d 端口", port);
 
     sig = signal(SIGCHLD, sig_child);
     if (sig == SIG_ERR) {
