@@ -45,7 +45,7 @@ ssize_t writen(int fd, const void* buf, size_t n)
     return n;
 }
 
-static int read_cnt;
+static ssize_t read_cnt;
 static char* read_p;
 static char read_buf[MAXLINE];
 

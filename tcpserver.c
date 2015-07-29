@@ -27,7 +27,7 @@ void http_data_to_html_table(http_data *hp, char *table, size_t len)
     if (!string_empty(hp->body)) {
         size_t n = strlen(table);
         snprintf(table + n, len - n,
-                "<tr><th>%s</th><td>%s</td></tr>",
+                "<tr><th>%s</th><td><pre>%s</pre></td></tr>",
                 "BODY", string_cstr(hp->body));
     }
 
@@ -41,13 +41,11 @@ void hello(int conn_fd)
     char buf[MAXLINE];
     time_t now;
     struct tm *tm;
-    int n;
+    ssize_t n;
     http_data *hp = http_data_new();
 
     while ((n = readline(conn_fd, request, sizeof(request))) > 0) {
-        log_info("获取一行: %s", request);
         http_parser_execute(hp->parser, hp->settings, request, n);
-        log_info("[状态: %2d]\n", hp->state);
         if (hp->state >= HEADER_END) {
             break;
         }
@@ -115,7 +113,7 @@ int main(int argc, char *argv[])
 
     if (argc < 2 || (port = atoi(argv[1])) < 1) {
         if (!config_get_int(conf, "http", "listen", &port)) {
-            port = 80;
+            port = 8081;
         }
     }
 
@@ -163,6 +161,7 @@ int main(int argc, char *argv[])
         if (pid == 0) {
             close(listen_fd);
             hello(conn_fd);
+            config_free(conf);
             exit(0);
         } else if (pid < 0) {
             log_error("创建新进程失败");
