@@ -6,6 +6,8 @@
 
 #define koko fprintf(stderr, "ライン %d: %s() ここまで\n", __LINE__, __func__)
 
+configuration *conf;
+
 void http_data_to_html_table(http_data *hp, char *table, size_t len)
 {
     snprintf(table, len,
@@ -41,7 +43,7 @@ void hello(int conn_fd)
     char buf[MAXLINE];
     time_t now;
     struct tm *tm;
-    ssize_t n;
+    int n;
     http_data *hp = http_data_new();
 
     while ((n = readline(conn_fd, request, sizeof(request))) > 0) {
@@ -72,11 +74,11 @@ void hello(int conn_fd)
 
     snprintf(buff, sizeof(buff),
              "HTTP/1.1 200 OK\r\n"
-             "Server: Time\r\n"
+             "Server: %s\r\n"
              "Date: %s"
              "Content-Type: text/html;charset=UTF-8\r\n"
              "Content-Length: %ld\r\n"
-             "\r\n%s\r\n\r\n",
+             "\r\n%s\r\n\r\n", "",
              ctime(&now), strlen(buf) + 4, buf);
 
     n = writen(conn_fd, buff, strlen(buff));
@@ -108,12 +110,12 @@ int main(int argc, char *argv[])
     socklen_t socklen;
     int pid;
 
-    configuration *conf = config_new();
+    conf = config_new();
     config_init(conf);
 
     if (argc < 2 || (port = atoi(argv[1])) < 1) {
         if (!config_get_int(conf, "http", "listen", &port)) {
-            port = 8081;
+            port = 80;
         }
     }
 
@@ -161,7 +163,6 @@ int main(int argc, char *argv[])
         if (pid == 0) {
             close(listen_fd);
             hello(conn_fd);
-            config_free(conf);
             exit(0);
         } else if (pid < 0) {
             log_error("创建新进程失败");
