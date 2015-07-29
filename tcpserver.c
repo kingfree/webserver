@@ -2,16 +2,58 @@
 #include "log.h"
 #include "conf.h"
 #include "http.h"
+#include "map.h"
 
 #define koko fprintf(stderr, "ライン %d: %s() ここまで\n", __LINE__, __func__)
 
-void hello(int fd, const char *request, size_t len)
+void http_data_to_html_table(http_data *hp, char *table, size_t len)
 {
+    snprintf(table, len,
+            "<tr><th>%s</th><td>%s</td></tr>",
+            http_method_str(hp->parser->method),
+            string_cstr(hp->url));
+
+    const char *key;
+    map_str_t *m = hp->head;
+    map_iter_t iter = map_iter(m);
+
+    while ((key = map_next(m, &iter))) {
+        size_t n = strlen(table);
+        snprintf(table + n, len - n,
+                "<tr><th>%s</th><td>%s</td></tr>",
+                key, *map_get(m, key));
+    }
+
+    if (!string_empty(hp->body)) {
+        size_t n = strlen(table);
+        snprintf(table + n, len - n,
+                "<tr><th>%s</th><td>%s</td></tr>",
+                "BODY", string_cstr(hp->body));
+    }
+
+}
+
+void hello(int conn_fd)
+{
+    char request[MAXLINE];
+    char table[MAXLINE * 8];
     char buff[MAXLINE];
     char buf[MAXLINE];
     time_t now;
     struct tm *tm;
     int n;
+    http_data *hp = http_data_new();
+
+    while ((n = readline(conn_fd, request, sizeof(request))) > 0) {
+        log_info("获取一行: %s", request);
+        http_parser_execute(hp->parser, hp->settings, request, n);
+        log_info("[状态: %2d]\n", hp->state);
+        if (hp->state >= HEADER_END) {
+            break;
+        }
+    }
+    http_data_to_html_table(hp, table, sizeof(table));
+    http_data_free(hp);
 
     now = time(NULL);
     tm = localtime(&now);
@@ -25,9 +67,10 @@ void hello(int fd, const char *request, size_t len)
              "<h1>Hello, 世界</h1>"
              "<p>当前服务器时间: </p>"
              "<pre>%s</pre>"
+             "<table><h2>HTTP 请求</h2>%s</table>"
              "</body>"
              "</html>",
-             buff);
+             buff, table);
 
     snprintf(buff, sizeof(buff),
              "HTTP/1.1 200 OK\r\n"
@@ -38,7 +81,7 @@ void hello(int fd, const char *request, size_t len)
              "\r\n%s\r\n\r\n",
              ctime(&now), strlen(buf) + 4, buf);
 
-    n = send(fd, buff, strlen(buff), 0);
+    n = writen(conn_fd, buff, strlen(buff));
     if (n < 0) {
         log_error("发送数据失败 %d", n);
         exit(1);
@@ -66,7 +109,6 @@ int main(int argc, char *argv[])
     sig_t sig;
     socklen_t socklen;
     int pid;
-    char buff[MAXLINE];
 
     configuration *conf = config_new();
     config_init(conf);
@@ -119,17 +161,8 @@ int main(int argc, char *argv[])
 
         pid = fork();
         if (pid == 0) {
-            res = recv(conn_fd, buff, sizeof(buff), 0);
-            if (res < 0) {
-                log_error("接收数据失败");
-                exit(1);
-            }
-            log_info("请求内容: (并不关心)\n%s", buff);
-
             close(listen_fd);
-
-            hello(conn_fd, buff, res);
-
+            hello(conn_fd);
             exit(0);
         } else if (pid < 0) {
             log_error("创建新进程失败");

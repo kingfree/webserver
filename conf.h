@@ -12,7 +12,9 @@ bool config_free(configuration *conf);
 
 bool config_is_inited(configuration *conf);
 
-bool config_get_str(configuration *conf, const char *section, const char *name, char **value);
-bool config_get_int(configuration *conf, const char *section, const char *name, int *value);
+bool config_get_str(configuration *conf, const char *section, const char *name,
+                    char **value);
+bool config_get_int(configuration *conf, const char *section, const char *name,
+                    int *value);
 
 #endif

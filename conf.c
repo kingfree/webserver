@@ -24,8 +24,8 @@ static char *comb_str(const char *section, const char *name)
     return k;
 }
 
-static int conf_handler(void* user, const char* section, const char* name,
-        const char* value)
+static int conf_handler(void *user, const char *section, const char *name,
+                        const char *value)
 {
     configuration *conf = (configuration *)user;
     char *k;
@@ -37,10 +37,7 @@ static int conf_handler(void* user, const char* section, const char* name,
     return 1;
 }
 
-configuration *config_new()
-{
-    return malloc(sizeof(configuration));
-}
+configuration *config_new() { return malloc(sizeof(configuration)); }
 
 bool config_init(configuration *conf)
 {
@@ -60,8 +57,7 @@ bool config_free(configuration *conf)
 
 bool config_load(configuration *conf, const char *filename)
 {
-    if (config_is_inited(conf))
-        return false;
+    if (config_is_inited(conf)) return false;
     map_init(&conf->map);
     if (ini_parse(filename, conf_handler, conf) == 0) {
         conf->inited = 1;
@@ -70,12 +66,10 @@ bool config_load(configuration *conf, const char *filename)
     return false;
 }
 
-bool config_is_inited(configuration *conf)
-{
-    return conf->inited;
-}
+bool config_is_inited(configuration *conf) { return conf->inited; }
 
-bool config_get_str(configuration *conf, const char *section, const char *name, char **value)
+bool config_get_str(configuration *conf, const char *section, const char *name,
+                    char **value)
 {
     char *k = comb_str(section, name);
     char **v = map_get(&conf->map, k);
@@ -87,9 +81,10 @@ bool config_get_str(configuration *conf, const char *section, const char *name, 
     return false;
 }
 
-bool config_get_int(configuration *conf, const char *section, const char *name, int *value)
+bool config_get_int(configuration *conf, const char *section, const char *name,
+                    int *value)
 {
-    char* v;
+    char *v;
     if (config_get_str(conf, section, name, &v)) {
         int i = atoi(v);
         if (errno == 0) {
@@ -99,4 +94,3 @@ bool config_get_int(configuration *conf, const char *section, const char *name, 
     }
     return false;
 }
-
