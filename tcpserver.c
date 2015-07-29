@@ -1,10 +1,11 @@
 #include "unp.h"
 #include "log.h"
 #include "conf.h"
+#include "http.h"
 
 #define koko fprintf(stderr, "ライン %d: %s() ここまで\n", __LINE__, __func__)
 
-void hello(int fd)
+void hello(int fd, const char *request, size_t len)
 {
     char buff[MAXLINE];
     char buf[MAXLINE];
@@ -34,8 +35,8 @@ void hello(int fd)
              "Date: %s"
              "Content-Type: text/html;charset=UTF-8\r\n"
              "Content-Length: %ld\r\n"
-             "\r\n%s\r\n",
-             ctime(&now), strlen(buf), buf);
+             "\r\n%s\r\n\r\n",
+             ctime(&now), strlen(buf) + 4, buf);
 
     n = send(fd, buff, strlen(buff), 0);
     if (n < 0) {
@@ -67,11 +68,14 @@ int main(int argc, char *argv[])
     int pid;
     char buff[MAXLINE];
 
-    log_info("配置是否初始化: %d", global_settings.inited);
-    conf_init();
-    log_info("配置是否初始化: %d", global_settings.inited);
+    configuration *conf = config_new();
+    config_init(conf);
 
-    if (argc > 1 && (port = atoi(argv[1])) < 1) port = global_settings.port;
+    if (argc < 2 || (port = atoi(argv[1])) < 1) {
+        if (!config_get_int(conf, "http", "listen", &port)) {
+            port = 80;
+        }
+    }
 
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) {
@@ -124,7 +128,7 @@ int main(int argc, char *argv[])
 
             close(listen_fd);
 
-            hello(conn_fd);
+            hello(conn_fd, buff, res);
 
             exit(0);
         } else if (pid < 0) {

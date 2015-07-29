@@ -2,7 +2,7 @@ CC = cc
 CFLAGS = -Wall
 
 TCPSERVER = tcpserver
-TCPSERVERO = tcpserver.o log.o iofunc.o conf.o ini.o
+TCPSERVERO = tcpserver.o log.o iofunc.o conf.o ini.o http.o map.o http_parser.o
 
 default:
 	$(MAKE) -r all
