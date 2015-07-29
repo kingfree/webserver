@@ -78,7 +78,8 @@ void hello(int conn_fd)
              "Date: %s"
              "Content-Type: text/html;charset=UTF-8\r\n"
              "Content-Length: %ld\r\n"
-             "\r\n%s\r\n\r\n", "",
+             "\r\n%s\r\n\r\n",
+             global_settings.server_name,
              ctime(&now), strlen(buf) + 4, buf);
 
     n = writen(conn_fd, buff, strlen(buff));
@@ -110,13 +111,10 @@ int main(int argc, char *argv[])
     socklen_t socklen;
     int pid;
 
-    conf = config_new();
-    config_init(conf);
+    conf_init();
 
     if (argc < 2 || (port = atoi(argv[1])) < 1) {
-        if (!config_get_int(conf, "http", "listen", &port)) {
-            port = 80;
-        }
+        port = global_settings.port;
     }
 
     listen_fd = socket(AF_INET, SOCK_STREAM, 0);
