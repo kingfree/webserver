@@ -43,7 +43,7 @@ char *get_file_mime(const char *filename)
     log_info("扩展名: %s", p);
     if (strcmp(p, "gif") == 0) return "image/gif";
     if (strcmp(p, "ico") == 0) return "image/x-icon";
-    if (strcmp(p, "png") == 0) return "image/png\r\nAccept-Ranges: bytes";
+    if (strcmp(p, "png") == 0) return "image/png";
     if (strcmp(p, "html") == 0) return "text/html;charset=UTF-8";
     if (strcmp(p, "php") == 0) return "text/html;charset=UTF-8";
     return "text/plain";
