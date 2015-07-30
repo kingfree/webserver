@@ -16,7 +16,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-#define MAXLINE 2048
+#define MAXLINE 1024 * 256
 #define LISTENQ 5
 
 /* iofunc.c */

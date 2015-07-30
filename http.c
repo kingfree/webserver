@@ -57,7 +57,7 @@ void http_data_free(http_data *hp)
 {
     if (!hp) return;
     free(hp->parser);
-    //map_deinit(hp->head);
+    map_deinit(hp->head);
     string_free(hp->url);
     string_free(hp->body);
     free(hp);

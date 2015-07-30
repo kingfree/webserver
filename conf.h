@@ -6,6 +6,8 @@ typedef struct {
     int port;
     char *root;
     char *server_name;
+    char *index;
+    char *not_found;
 } configuration;
 
 configuration global_settings;

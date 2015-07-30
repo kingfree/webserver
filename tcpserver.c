@@ -35,27 +35,83 @@ void http_data_to_html_table(http_data *hp, char *table, size_t len)
 
 }
 
+char *get_file_mime(const char *filename)
+{
+    char *p = strrchr(filename, '.');
+    if (!p) return "text/plain";
+    p++;
+    log_info("扩展名: %s", p);
+    if (strcmp(p, "gif") == 0) return "image/gif";
+    if (strcmp(p, "ico") == 0) return "image/x-icon";
+    if (strcmp(p, "png") == 0) return "image/png\r\nAccept-Ranges: bytes";
+    if (strcmp(p, "html") == 0) return "text/html;charset=UTF-8";
+    if (strcmp(p, "php") == 0) return "text/html;charset=UTF-8";
+    return "text/plain";
+}
+
+int get_file(const char *filename, char *buf, size_t maxlen)
+{
+    int fd;
+    long n;
+    string *path = string_new();
+
+    string_cat(path, global_settings.root);
+    string_cat(path, filename);
+    log_info("获取文件: %s", string_cstr(path));
+    
+    fd = open(string_cstr(path), O_RDONLY);
+    if (fd < 0) return 0;
+
+    n = readn(fd, buf, maxlen);
+    close(fd);
+
+    if (n < 0) return 0;
+    buf[n] = '\0';
+    return n;
+}
+
+char *get_file_name(string *url)
+{
+    string *res = string_new();
+    char *s = strdup(string_cstr(url));
+    char *pq = strchr(s, '?');
+    if (pq && pq != s) *pq = '\0';
+    char *pd = strrchr(s, '/');
+    long l = strlen(s);
+    string_ncat(res, s, l);
+    if (pd - s + 1 == l) string_cat(res, global_settings.index);
+    return string_cstr(res);
+}
+
 void hello(int conn_fd)
 {
     char request[MAXLINE];
     char table[MAXLINE * 8];
     char buff[MAXLINE];
-    char buf[MAXLINE];
+    // char buf[MAXLINE];
     time_t now;
-    struct tm *tm;
-    int n;
+    // struct tm *tm;
+    long n;
     http_data *hp = http_data_new();
 
     while ((n = readline(conn_fd, request, sizeof(request))) > 0) {
+        log_info("读取一行: %s", request);
         http_parser_execute(hp->parser, hp->settings, request, n);
-        if (hp->state >= HEADER_END) {
+        if (hp->state >= END) {
             break;
         }
     }
+
     http_data_to_html_table(hp, table, sizeof(table));
+
+    char *filename = get_file_name(hp->url);
+
+    log_info("maxline=%d", sizeof(request));
+    n = get_file(filename, request, sizeof(request));
+
     http_data_free(hp);
 
-    now = time(NULL);
+    /* now = time(NULL);
     tm = localtime(&now);
     strftime(buff, sizeof(buff), "%G-%m-%d %T", tm);
     snprintf(buf, sizeof(buf),
@@ -68,25 +124,23 @@ void hello(int conn_fd)
              "<p>当前服务器时间: </p>"
              "<pre>%s</pre>"
              "<table><h2>HTTP 请求</h2>%s</table>"
+             "<h2>文件内容</h2>"
+             "<div>%s</div>"
              "</body>"
              "</html>",
-             buff, table);
+             buff, table, request);*/
 
     snprintf(buff, sizeof(buff),
              "HTTP/1.1 200 OK\r\n"
              "Server: %s\r\n"
              "Date: %s"
-             "Content-Type: text/html;charset=UTF-8\r\n"
+             "Content-Type: %s\r\n"
              "Content-Length: %ld\r\n"
-             "\r\n%s\r\n\r\n",
-             global_settings.server_name,
-             ctime(&now), strlen(buf) + 4, buf);
+             "\r\n",
+             global_settings.server_name, ctime(&now), get_file_mime(filename), n); 
 
-    n = writen(conn_fd, buff, strlen(buff));
-    if (n < 0) {
-        log_error("发送数据失败 %d", n);
-        exit(1);
-    }
+    writen(conn_fd, buff, strlen(buff));
+    writen(conn_fd, request, n);
     log_info("响应内容: \n%s", buff);
 }
 

@@ -20,9 +20,15 @@ static int conf_handler(void* user, const char* section, const char* name,
     if (MATCH("http", "listen")) {
         pconfig->port = atoi(value);
     } else if (MATCH("http", "root")) {
-        pconfig->root = strdup(value);
+        size_t l = strlen(value);
+        if (value[l - 1] == '/') l--;
+        pconfig->root = strndup(value, l);
     } else if (MATCH("http", "server_name")) {
         pconfig->server_name = strdup(value);
+    } else if (MATCH("http", "index")) {
+        pconfig->index = strdup(value);
+    } else if (MATCH("http", "not_found")) {
+        pconfig->not_found = strdup(value);
     } else {
         return 0;
     }

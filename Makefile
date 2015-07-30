@@ -16,7 +16,11 @@ all:
 $(TCPSERVER): $(TCPSERVERO)
 	$(CC) $(CFLAGS) $^ -o $@
 
+debug:
+	$(CC) $(CFLAGS) -g -O0 tcpserver.c log.c iofunc.c conf.c ini.c http.c map.c http_parser.c string.c -o $(TCPSERVER)
+
 clean:
 	-$(RM) *.o
-	-$(RM) TCPSERVER
+	-$(RM) $(TCPSERVER)
+	-$(RM) -r $(TCPSERVER).dSYM
 

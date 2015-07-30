@@ -61,6 +61,11 @@ string *string_ncat(string *s1, const char *s2, size_t n)
     // return res == s1->data ? s1 : NULL;
 }
 
+string *string_cat(string *s1, const char *s2)
+{
+    return string_ncat(s1, s2, strlen(s2));
+}
+
 void string_free(string *s)
 {
     if (s->data) free(s->data);
