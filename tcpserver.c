@@ -101,12 +101,12 @@ void hello(int conn_fd)
             break;
         }
     }
+    log_info("URL: %s", string_cstr(hp->url));
 
     http_data_to_html_table(hp, table, sizeof(table));
 
     char *filename = get_file_name(hp->url);
 
-    log_info("maxline=%d", sizeof(request));
     n = get_file(filename, request, sizeof(request));
 
     http_data_free(hp);
